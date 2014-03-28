@@ -18,6 +18,18 @@ public class ProcurementServiceConfiguration extends Configuration {
     @JsonProperty
     private String stompTopicPrefix;
 
+    @JsonProperty
+    private String apolloHost;
+
+    @JsonProperty
+    public int apolloPort;
+
+    @JsonProperty
+    public String apolloUser;
+
+    @JsonProperty
+    public String apolloPwd;
+    
     @Valid
     @NotNull
     @JsonProperty
@@ -52,6 +64,38 @@ public class ProcurementServiceConfiguration extends Configuration {
 
     public void setStompTopicPrefix(String stompTopicPrefix) {
 	this.stompTopicPrefix = stompTopicPrefix;
+    }
+
+    public String getApolloHost() {
+	return apolloHost;
+    }
+
+    public void setApolloHost(String host) {
+	apolloHost = host;
+    }
+
+    public int getApolloPort() {
+	return apolloPort;
+    }
+
+    public void setApolloPort(int port) {
+	apolloPort = port;
+    }
+
+    public String getApolloUser() {
+	return apolloUser;
+    }
+
+    public void setApolloUser(String user) {
+	apolloUser = user;
+    }
+
+    public String getApolloPassword() {
+	return apolloPwd;
+    }
+
+    public void setApolloPassword(String pwd) {
+	apolloPwd = pwd;
     }
 
 }

@@ -14,6 +14,8 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import java.io.IOException;
+
 import com.yammer.dropwizard.jersey.params.LongParam;
 import com.yammer.metrics.annotation.Timed;
 
@@ -23,6 +25,13 @@ import edu.sjsu.cmpe.library.dto.BookDto;
 import edu.sjsu.cmpe.library.dto.BooksDto;
 import edu.sjsu.cmpe.library.dto.LinkDto;
 import edu.sjsu.cmpe.library.repository.BookRepositoryInterface;
+import edu.sjsu.cmpe.library.LibraryService;
+
+import org.fusesource.stomp.codec.StompFrame;
+import static org.fusesource.stomp.client.Constants.*;
+import static org.fusesource.hawtbuf.Buffer.ascii;
+import org.fusesource.hawtbuf.Buffer;
+import org.fusesource.hawtbuf.AsciiBuffer;
 
 @Path("/v1/books")
 @Produces(MediaType.APPLICATION_JSON)
@@ -88,7 +97,17 @@ public class BookResource {
 	    @DefaultValue("available") @QueryParam("status") Status status) {
 	Book book = bookRepository.getBookByISBN(isbn.get());
 	book.setStatus(status);
-
+	if(status == Status.lost) {
+	    try {
+		StompFrame frame = new StompFrame(SEND);
+		frame.addHeader(DESTINATION, StompFrame.encodeHeader("/queue/26642.book.orders"));
+		frame.content(Buffer.ascii(LibraryService.getLibraryName() + ":" + isbn));
+		LibraryService.connection.send(frame);
+	    }
+	    catch (IOException e) {
+		return Response.status(500).build();
+	    }
+	}
 	BookDto bookResponse = new BookDto(book);
 	String location = "/books/" + book.getIsbn();
 	bookResponse.addLink(new LinkDto("view-book", location, "GET"));

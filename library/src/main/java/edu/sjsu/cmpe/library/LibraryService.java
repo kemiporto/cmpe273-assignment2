@@ -16,12 +16,23 @@ import edu.sjsu.cmpe.library.repository.BookRepository;
 import edu.sjsu.cmpe.library.repository.BookRepositoryInterface;
 import edu.sjsu.cmpe.library.ui.resources.HomeResource;
 
+import org.fusesource.stomp.client.BlockingConnection;
+import org.fusesource.stomp.client.Stomp;
+
 public class LibraryService extends Service<LibraryServiceConfiguration> {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
+    public static BlockingConnection connection;
+
+    private static String libraryName;
+
     public static void main(String[] args) throws Exception {
 	new LibraryService().run(args);
+    }
+
+    public static String getLibraryName() {
+	return libraryName;
     }
 
     @Override
@@ -34,6 +45,7 @@ public class LibraryService extends Service<LibraryServiceConfiguration> {
     @Override
     public void run(LibraryServiceConfiguration configuration,
 	    Environment environment) throws Exception {
+	libraryName = configuration.getLibraryName();
 	// This is how you pull the configurations from library_x_config.yml
 	String queueName = configuration.getStompQueueName();
 	String topicName = configuration.getStompTopicName();
@@ -41,6 +53,10 @@ public class LibraryService extends Service<LibraryServiceConfiguration> {
 		configuration.getLibraryName(), queueName,
 		topicName);
 	// TODO: Apollo STOMP Broker URL and login
+	Stomp stomp = new Stomp(configuration.getApolloHost(), configuration.getApolloPort());
+	stomp.setPasscode(configuration.getApolloPassword());
+	stomp.setLogin(configuration.getApolloUser());
+	connection = stomp.connectBlocking();
 
 	/** Root API */
 	environment.addResource(RootResource.class);

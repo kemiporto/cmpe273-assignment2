@@ -13,6 +13,11 @@ import de.spinscale.dropwizard.jobs.JobsBundle;
 import edu.sjsu.cmpe.procurement.api.resources.RootResource;
 import edu.sjsu.cmpe.procurement.config.ProcurementServiceConfiguration;
 
+import org.fusesource.stomp.codec.StompFrame;
+import static org.fusesource.stomp.client.Constants.*;
+import org.fusesource.stomp.client.BlockingConnection;
+import org.fusesource.stomp.client.Stomp;
+
 public class ProcurementService extends Service<ProcurementServiceConfiguration> {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
@@ -21,6 +26,8 @@ public class ProcurementService extends Service<ProcurementServiceConfiguration>
      * FIXME: THIS IS A HACK!
      */
     public static Client jerseyClient;
+
+    public static BlockingConnection connection;
 
     public static void main(String[] args) throws Exception {
 	new ProcurementService().run(args);
@@ -39,6 +46,9 @@ public class ProcurementService extends Service<ProcurementServiceConfiguration>
     @Override
     public void run(ProcurementServiceConfiguration configuration,
 	    Environment environment) throws Exception {
+	log.info("host: " + configuration.getApolloHost());
+	log.info("port: " + configuration.getApolloPort());
+
 	jerseyClient = new JerseyClientBuilder()
 	.using(configuration.getJerseyClientConfiguration())
 	.using(environment).build();
@@ -57,6 +67,15 @@ public class ProcurementService extends Service<ProcurementServiceConfiguration>
 	String topicName = configuration.getStompTopicPrefix();
 	log.debug("Queue name is {}. Topic is {}", queueName, topicName);
 	// TODO: Apollo STOMP Broker URL and login
+	Stomp stomp = new Stomp(configuration.getApolloHost(), configuration.getApolloPort());
+	stomp.setPasscode(configuration.getApolloPassword());
+	stomp.setLogin(configuration.getApolloUser());
+	connection = stomp.connectBlocking();
 
+        StompFrame frame = new StompFrame(SUBSCRIBE);
+        frame.addHeader(DESTINATION, StompFrame.encodeHeader("/queue/26642.book.orders"));
+        frame.addHeader(ID, connection.nextId());
+        StompFrame response = connection.request(frame);
     }
+
 }
