@@ -4,40 +4,115 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.ArrayList;
+
+import javax.json.Json;
+import javax.json.stream.JsonGenerator;
 
 import de.spinscale.dropwizard.jobs.Job;
 import de.spinscale.dropwizard.jobs.annotations.Every;
 import edu.sjsu.cmpe.procurement.ProcurementService;
 
 import org.fusesource.stomp.codec.StompFrame;
+import org.fusesource.stomp.jms.message.StompJmsMessage;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * This job will run at every 5 second.
+ * This job will run every 5 minutes.
  */
-@Every("5s")
+@Every("5min")
 public class ProcurementSchedulerJob extends Job {
     private final Logger log = LoggerFactory.getLogger(getClass());
 
+    static class BookOrderRequest {
+	private static final ObjectMapper mapper = new ObjectMapper();
+
+	private String id = "26642";
+
+	public String getId() {
+	    return id;
+	}
+
+	@JsonProperty("order_book_isbns")
+	private ArrayList<Integer> ordeBookIsbns;
+
+	@JsonProperty("order_book_isbns")
+	public ArrayList<Integer> getOrderBookIsbns() {
+	    return ordeBookIsbns;
+	}
+
+	public BookOrderRequest(ArrayList<Integer> isbns) {
+	    ordeBookIsbns = isbns;
+	}
+
+	public byte[] toJsonByteArray() throws IOException {
+	    return mapper.writeValueAsBytes(this);
+	}
+    }
+
+    static class BookOrderResponse {
+	private String msg;
+	public String getMsg() {
+	    return msg;
+	}
+
+	public void setMsg(String msg) {
+	    this.msg = msg;
+	}
+
+	public String toString() {
+	    return msg;
+	}
+    }
+
+    private void postOrderBook(ArrayList<Integer> order) throws Exception {
+	log.info("sending POST request to publisher");
+	BookOrderResponse response = ProcurementService.jerseyClient
+	    .resource("http://54.219.156.168:9000/orders")
+	    .entity(new BookOrderRequest(order).toJsonByteArray(), "application/json")
+	    .post(BookOrderResponse.class);
+	log.info("Response from broker: {}", response);
+    }
+
     @Override
     public void doJob() {
-	/*
-	String strResponse = ProcurementService.jerseyClient.resource(
-		"http://54.219.156.168").get(String.class);
-	log.debug("Response from broker: {}", strResponse);
-	*/
-	ArrayList<Integer> orderBook = new ArrayList<Integer>();
-	while(true) {
+	log.info("doJob()");
+	// Synchronized here as consumer might not be thread-safe.
+	synchronized (ProcurementService.consumer) {
 	    try {
-		StompFrame received = ProcurementService.connection.receive();
-		String content =  received.content().toString();
-		log.info("message content: " + content);
-		int isbn = Integer.parseInt(content.substring(content.lastIndexOf(":") + 1));
-		orderBook.add(isbn);
-		log.info("isbn added: " + isbn);
-	    }
-	    catch(IOException e) {
-		return;
+		ArrayList<Integer> orderBook = new ArrayList<Integer>();
+		for(;;) {
+		    StompJmsMessage received;
+		    try {
+			// Try to receive a message from the broker, waiting 10s. If nothing is received
+			// then we assume there are no more messages in the queue for us.
+			received =
+			    (StompJmsMessage) ProcurementService.consumer.receive(10000);
+		    } catch (ClassCastException e) {
+			log.info("Unexpected message type: {}.", e);
+			continue;
+		    }
+
+		    if (received == null) {
+			log.info("No new messages. Exiting due to timeout");
+		     	break;
+		    }
+
+		    String body = received.getFrame().contentAsString();
+		    log.info("Received {}", body);
+		    int isbn = Integer.parseInt(body.substring(body.lastIndexOf(":") + 1));
+		    orderBook.add(isbn);
+		    log.info("isbn added: " + isbn);
+		}
+
+		if(!orderBook.isEmpty()) {
+		    postOrderBook(orderBook);
+		}
+	    } catch (Exception e) {
+		log.info("Exception {}: {}.", e.getClass(), e.getMessage());
+		throw new RuntimeException(e);
 	    }
 	}
     }

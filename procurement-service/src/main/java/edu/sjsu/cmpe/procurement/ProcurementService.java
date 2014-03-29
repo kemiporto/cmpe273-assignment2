@@ -13,10 +13,12 @@ import de.spinscale.dropwizard.jobs.JobsBundle;
 import edu.sjsu.cmpe.procurement.api.resources.RootResource;
 import edu.sjsu.cmpe.procurement.config.ProcurementServiceConfiguration;
 
-import org.fusesource.stomp.codec.StompFrame;
-import static org.fusesource.stomp.client.Constants.*;
-import org.fusesource.stomp.client.BlockingConnection;
-import org.fusesource.stomp.client.Stomp;
+import org.fusesource.stomp.jms.StompJmsConnectionFactory;
+import org.fusesource.stomp.jms.StompJmsConnection;
+import org.fusesource.stomp.jms.StompJmsQueue;
+import javax.jms.QueueSession;
+import javax.jms.Session;
+
 
 public class ProcurementService extends Service<ProcurementServiceConfiguration> {
 
@@ -27,7 +29,8 @@ public class ProcurementService extends Service<ProcurementServiceConfiguration>
      */
     public static Client jerseyClient;
 
-    public static BlockingConnection connection;
+    public static QueueSession queueSession;
+    public static javax.jms.MessageConsumer consumer;
 
     public static void main(String[] args) throws Exception {
 	new ProcurementService().run(args);
@@ -48,11 +51,10 @@ public class ProcurementService extends Service<ProcurementServiceConfiguration>
 	    Environment environment) throws Exception {
 	log.info("host: " + configuration.getApolloHost());
 	log.info("port: " + configuration.getApolloPort());
-
 	jerseyClient = new JerseyClientBuilder()
-	.using(configuration.getJerseyClientConfiguration())
-	.using(environment).build();
-
+	    .using(configuration.getJerseyClientConfiguration())
+	    .using(environment)
+	    .build();
 	/**
 	 * Root API - Without RootResource, Dropwizard will throw this
 	 * exception:
@@ -66,16 +68,17 @@ public class ProcurementService extends Service<ProcurementServiceConfiguration>
 	String queueName = configuration.getStompQueueName();
 	String topicName = configuration.getStompTopicPrefix();
 	log.debug("Queue name is {}. Topic is {}", queueName, topicName);
-	// TODO: Apollo STOMP Broker URL and login
-	Stomp stomp = new Stomp(configuration.getApolloHost(), configuration.getApolloPort());
-	stomp.setPasscode(configuration.getApolloPassword());
-	stomp.setLogin(configuration.getApolloUser());
-	connection = stomp.connectBlocking();
 
-        StompFrame frame = new StompFrame(SUBSCRIBE);
-        frame.addHeader(DESTINATION, StompFrame.encodeHeader("/queue/26642.book.orders"));
-        frame.addHeader(ID, connection.nextId());
-        StompFrame response = connection.request(frame);
+	StompJmsConnectionFactory factory = new StompJmsConnectionFactory();
+	factory.setBrokerURI("tcp://" + configuration.getApolloHost() + ":" + configuration.getApolloPort());
+	factory.setUsername(configuration.getApolloUser());
+	factory.setPassword(configuration.getApolloPassword());
+	factory.setQueuePrefix("/queue/");
+	StompJmsConnection connection = (StompJmsConnection) factory.createQueueConnection();
+	connection.start();
+	QueueSession session = connection
+	    .createQueueSession(false, javax.jms.Session.AUTO_ACKNOWLEDGE);
+	consumer = session.createConsumer(new StompJmsQueue(connection, "26642.book.orders"));
     }
 
 }

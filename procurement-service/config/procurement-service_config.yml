@@ -4,11 +4,11 @@
 
 # Apollo STOMP Broker Configuration
 # FIXME - Replace 99999 with your ID
-stompQueueName: /queue/99999.book.orders
+stompQueueName: /queue/26642.book.orders
 
 # Procurement Service needs to publish to all topics!
 # FIXME - Replace 99999 with your ID
-stompTopicPrefix: /topic/99999.book.
+stompTopicPrefix: /topic/26642.book.
 
 # TODO: Apollo STOMP Broker URL and login
 apolloUser: "admin"
@@ -27,6 +27,13 @@ http:
 
   # The port on which the HTTP server listens for administrative requests.
   adminPort: 9000
+
+
+httpClient:
+  # The broker does not support gzip encoding. Disabling it...
+  gzipEnabled: false
+  gzipEnabledForRequests: false
+
 
 # Logging settings.
 logging:
