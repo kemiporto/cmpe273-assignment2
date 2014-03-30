@@ -18,7 +18,8 @@ import org.fusesource.stomp.jms.StompJmsConnection;
 import org.fusesource.stomp.jms.StompJmsQueue;
 import javax.jms.QueueSession;
 import javax.jms.Session;
-
+import javax.jms.TopicSession;
+import javax.jms.TopicConnection;
 
 public class ProcurementService extends Service<ProcurementServiceConfiguration> {
 
@@ -31,6 +32,8 @@ public class ProcurementService extends Service<ProcurementServiceConfiguration>
 
     public static QueueSession queueSession;
     public static javax.jms.MessageConsumer consumer;
+    public static StompJmsConnectionFactory factory = null;
+    public static TopicSession tSession;
 
     public static void main(String[] args) throws Exception {
 	new ProcurementService().run(args);
@@ -69,16 +72,22 @@ public class ProcurementService extends Service<ProcurementServiceConfiguration>
 	String topicName = configuration.getStompTopicPrefix();
 	log.debug("Queue name is {}. Topic is {}", queueName, topicName);
 
-	StompJmsConnectionFactory factory = new StompJmsConnectionFactory();
+	factory = new StompJmsConnectionFactory();
 	factory.setBrokerURI("tcp://" + configuration.getApolloHost() + ":" + configuration.getApolloPort());
 	factory.setUsername(configuration.getApolloUser());
 	factory.setPassword(configuration.getApolloPassword());
-	factory.setQueuePrefix("/queue/");
+	factory.setQueuePrefix("/queue/26642.book.");
+	factory.setTopicPrefix("/topic/26642.books.");
+
 	StompJmsConnection connection = (StompJmsConnection) factory.createQueueConnection();
 	connection.start();
-	QueueSession session = connection
-	    .createQueueSession(false, javax.jms.Session.AUTO_ACKNOWLEDGE);
-	consumer = session.createConsumer(new StompJmsQueue(connection, "26642.book.orders"));
+	QueueSession session = connection.createQueueSession(false, javax.jms.Session.AUTO_ACKNOWLEDGE);
+	consumer = session.createConsumer(new StompJmsQueue(connection, "orders"));
+
+
+	TopicConnection tConnection = ProcurementService.factory.createTopicConnection();
+	tConnection.start();
+	tSession = tConnection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
     }
 
 }

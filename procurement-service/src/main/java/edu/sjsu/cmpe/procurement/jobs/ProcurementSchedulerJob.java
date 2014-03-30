@@ -9,20 +9,24 @@ import java.util.ArrayList;
 
 import javax.json.Json;
 import javax.json.stream.JsonGenerator;
+import javax.jms.TopicPublisher;
+import javax.jms.Session;
 
 import de.spinscale.dropwizard.jobs.Job;
 import de.spinscale.dropwizard.jobs.annotations.Every;
 import edu.sjsu.cmpe.procurement.ProcurementService;
+import edu.sjsu.cmpe.procurement.domain.Book;
 
 import org.fusesource.stomp.codec.StompFrame;
 import org.fusesource.stomp.jms.message.StompJmsMessage;
+import org.fusesource.stomp.jms.message.StompJmsTextMessage;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * This job will run every 5 minutes.
  */
-@Every("5min")
+@Every("5s")
 public class ProcurementSchedulerJob extends Job {
     private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -67,6 +71,29 @@ public class ProcurementSchedulerJob extends Job {
 	}
     }
 
+    static class ShippedBooks {
+	private static final ObjectMapper mapper = new ObjectMapper();
+
+	@JsonProperty("shipped_books")
+	private ArrayList<Book> shippedBooks;
+
+	public ArrayList<Book> getShippedBooks() {
+	    return shippedBooks;
+	}
+
+	public void setShippedBooks(ArrayList<Book> shippedBooks) {
+	    this.shippedBooks = shippedBooks;
+	}
+
+	public String toString() {
+	    try {
+		return mapper.writeValueAsString(this);
+	    } catch (Exception e) {
+		throw new RuntimeException(e);
+	    }
+	}
+    }
+
     private void postOrderBook(ArrayList<Integer> order) throws Exception {
 	log.info("sending POST request to publisher");
 	BookOrderResponse response = ProcurementService.jerseyClient
@@ -82,6 +109,7 @@ public class ProcurementSchedulerJob extends Job {
 	// Synchronized here as consumer might not be thread-safe.
 	synchronized (ProcurementService.consumer) {
 	    try {
+		// Part 1
 		ArrayList<Integer> orderBook = new ArrayList<Integer>();
 		for(;;) {
 		    StompJmsMessage received;
@@ -111,6 +139,33 @@ public class ProcurementSchedulerJob extends Job {
 		    postOrderBook(orderBook);
 		}
 	    } catch (Exception e) {
+		log.info("Exception {}: {}.", e.getClass(), e.getMessage());
+		throw new RuntimeException(e);
+	    }
+
+	    // Part2
+	    log.info("getting shipped books from publisher");
+	    ShippedBooks response = null;
+	    try {
+		response = ProcurementService.jerseyClient
+		    .resource("http://54.219.156.168:9000/orders/26642")
+		    .get(ShippedBooks.class);
+		log.info("response from publisher: {}", response);
+
+		for(Book b : response.getShippedBooks()) {
+		    TopicPublisher publisher = 
+			ProcurementService.tSession.createPublisher(
+			    ProcurementService.tSession.createTopic(b.getCategory()));
+		    String message = b.getIsbn() + ":" + b.getTitle() + ":" + b.getCategory() + ":";
+		    if(b.getCoverImage() != null) {
+			message += b.getCoverImage();
+		    } 
+		    StompJmsTextMessage stompMessage = new StompJmsTextMessage();
+		    stompMessage.setText(message);
+		    publisher.publish(stompMessage);
+		}
+	    }
+	    catch (Exception e) {
 		log.info("Exception {}: {}.", e.getClass(), e.getMessage());
 		throw new RuntimeException(e);
 	    }
