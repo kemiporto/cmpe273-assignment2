@@ -13,8 +13,11 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
+import javax.jms.MessageListener;
+import javax.jms.Message;
+import javax.jms.TextMessage;
 import java.io.IOException;
+import java.net.URL;
 
 import com.yammer.dropwizard.jersey.params.LongParam;
 import com.yammer.metrics.annotation.Timed;
@@ -33,12 +36,17 @@ import static org.fusesource.hawtbuf.Buffer.ascii;
 import org.fusesource.hawtbuf.Buffer;
 import org.fusesource.hawtbuf.AsciiBuffer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Path("/v1/books")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-public class BookResource {
+public class BookResource implements MessageListener{
     /** bookRepository instance */
     private final BookRepositoryInterface bookRepository;
+
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     /**
      * BookResource constructor
@@ -124,6 +132,32 @@ public class BookResource {
 	bookResponse.addLink(new LinkDto("create-book", "/books", "POST"));
 
 	return bookResponse;
+    }
+    public void onMessage(Message message) {
+	try {
+	    log.info("Receiving message {}", message);
+	    String tMessage = ((TextMessage) message).getText();
+	    String isbn = "1";
+	    String title = "";
+	    String category = "";
+	    String coverImage = "";
+	    Book book = bookRepository.getBookByISBN((long) Integer.parseInt(isbn));
+	    
+	    if(book != null) {
+		log.info("changing book {} status to available", book.getTitle());
+		book.setStatus(Status.available);
+	    } else {
+		log.info("adding new book {}", book);
+		book = new Book();
+		book.setTitle(title);
+		book.setCategory(category);
+		book.setCoverimage(new URL(coverImage));
+		bookRepository.saveBook(book);
+	    }
+	} catch (Exception e) {
+	    log.info("Exception " + e.getClass() + ":" +  e.getMessage());
+	    throw new RuntimeException(e);
+	}
     }
 }
 

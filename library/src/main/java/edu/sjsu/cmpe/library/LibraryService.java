@@ -18,6 +18,11 @@ import edu.sjsu.cmpe.library.ui.resources.HomeResource;
 
 import org.fusesource.stomp.client.BlockingConnection;
 import org.fusesource.stomp.client.Stomp;
+import org.fusesource.stomp.jms.StompJmsConnectionFactory;
+
+import javax.jms.TopicSession;
+import javax.jms.Session;
+import javax.jms.TopicConnection;
 
 public class LibraryService extends Service<LibraryServiceConfiguration> {
 
@@ -26,6 +31,8 @@ public class LibraryService extends Service<LibraryServiceConfiguration> {
     public static BlockingConnection connection;
 
     private static String libraryName;
+
+    public static TopicSession tSession;
 
     public static void main(String[] args) throws Exception {
 	new LibraryService().run(args);
@@ -62,9 +69,20 @@ public class LibraryService extends Service<LibraryServiceConfiguration> {
 	environment.addResource(RootResource.class);
 	/** Books APIs */
 	BookRepositoryInterface bookRepository = new BookRepository();
-	environment.addResource(new BookResource(bookRepository));
+	BookResource bookResource = new BookResource(bookRepository);
+	environment.addResource(bookResource);
 
 	/** UI Resources */
 	environment.addResource(new HomeResource(bookRepository));
+
+	StompJmsConnectionFactory factory =  new StompJmsConnectionFactory();
+	factory.setBrokerURI("tcp://" + configuration.getApolloHost() + ":" + configuration.getApolloPort());
+	factory.setUsername(configuration.getApolloUser());
+	factory.setPassword(configuration.getApolloPassword());
+	factory.setTopicPrefix("/topic/26642.books.");
+	TopicConnection tConnection = factory.createTopicConnection();
+	tConnection.start();
+	tSession = tConnection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
+	tSession.setMessageListener(bookResource);
     }
 }

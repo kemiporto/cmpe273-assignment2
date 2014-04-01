@@ -114,10 +114,10 @@ public class ProcurementSchedulerJob extends Job {
 		for(;;) {
 		    StompJmsMessage received;
 		    try {
-			// Try to receive a message from the broker, waiting 10s. If nothing is received
+			// Try to receive a message from the broker, waiting 2s. If nothing is received
 			// then we assume there are no more messages in the queue for us.
 			received =
-			    (StompJmsMessage) ProcurementService.consumer.receive(10000);
+			    (StompJmsMessage) ProcurementService.consumer.receive(2000);
 		    } catch (ClassCastException e) {
 			log.info("Unexpected message type: {}.", e);
 			continue;
