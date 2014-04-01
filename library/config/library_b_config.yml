@@ -8,7 +8,7 @@ stompQueueName: /queue/99999.book.orders
 
 # Library B subscribes to the Computer category ONLY!
 # FIXME - Replace 99999 with your ID
-stompTopicName: /topic/99999.book.computer
+stompTopicName: /topic/26642.books.computer
 
 # Name for library B
 libraryName: library-b
@@ -16,7 +16,9 @@ libraryName: library-b
 # TODO: Apollo STOMP Broker URL and login
 apolloUser: "admin"
 apolloPassword: "password"
+#Y
 #apolloHost: "54.219.156.168"
+#X
 apolloHost: "54.215.133.131"
 apolloPort: 61613
 

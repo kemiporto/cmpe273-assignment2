@@ -13,7 +13,9 @@ stompTopicPrefix: /topic/26642.book.
 # TODO: Apollo STOMP Broker URL and login
 apolloUser: "admin"
 apolloPassword: "password"
+#Y
 #apolloHost: "54.219.156.168"
+#X
 apolloHost: "54.215.133.131"
 apolloPort: 61613
 

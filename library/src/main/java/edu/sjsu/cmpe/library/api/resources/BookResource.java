@@ -136,8 +136,8 @@ public class BookResource implements MessageListener{
     }
     public void onMessage(Message message) {
 	try {
-	    log.info("Receiving message {}", message);
 	    String tMessage = ((TextMessage) message).getText();
+	    log.info("Receiving message {}", tMessage);
 	    Pattern pattern = Pattern.compile(":");
 	    String[] split = pattern.split(tMessage, 4);
 	    String isbn = split[0];
