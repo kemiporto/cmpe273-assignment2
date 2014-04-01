@@ -157,8 +157,8 @@ public class ProcurementSchedulerJob extends Job {
 			ProcurementService.tSession.createPublisher(
 			    ProcurementService.tSession.createTopic(b.getCategory()));
 		    String message = b.getIsbn() + ":" + b.getTitle() + ":" + b.getCategory() + ":";
-		    if(b.getCoverImage() != null) {
-			message += b.getCoverImage();
+		    if(b.getCoverimage() != null) {
+			message += b.getCoverimage();
 		    } 
 		    StompJmsTextMessage stompMessage = new StompJmsTextMessage();
 		    stompMessage.setText(message);

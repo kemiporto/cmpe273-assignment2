@@ -15,7 +15,7 @@ public class Book {
     private String title;
     @NotEmpty
     private String category;
-    private URL coverImage;
+    private URL coverimage;
     private Status status = Status.available;
     /**
      * @return the isbn
@@ -55,12 +55,12 @@ public class Book {
 	this.category =  category;
     }
 
-    public URL getCoverImage() {
-	return coverImage; 
+    public URL getCoverimage() {
+	return coverimage; 
     }
 
-    public void setCoverImage(URL coverImage) {
-	this.coverImage = coverImage;
+    public void setCoverimage(URL coverimage) {
+	this.coverimage = coverimage;
     }
 
     public Status getStatus() {
