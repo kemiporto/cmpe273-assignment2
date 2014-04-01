@@ -18,6 +18,7 @@ import javax.jms.Message;
 import javax.jms.TextMessage;
 import java.io.IOException;
 import java.net.URL;
+import java.util.regex.Pattern;
 
 import com.yammer.dropwizard.jersey.params.LongParam;
 import com.yammer.metrics.annotation.Timed;
@@ -137,22 +138,26 @@ public class BookResource implements MessageListener{
 	try {
 	    log.info("Receiving message {}", message);
 	    String tMessage = ((TextMessage) message).getText();
-	    String isbn = "1";
-	    String title = "";
-	    String category = "";
-	    String coverImage = "";
+	    Pattern pattern = Pattern.compile(":");
+	    String[] split = pattern.split(tMessage, 4);
+	    String isbn = split[0];
+	    String title = split[1];
+	    String category = split[2];
+	    String coverImage = split[3];
+	    log.info("received book from publisher: isbn: {}, title: {}, category: {}, coverimage: {}",
+		     isbn, title, category, coverImage);
 	    Book book = bookRepository.getBookByISBN((long) Integer.parseInt(isbn));
 	    
 	    if(book != null) {
 		log.info("changing book {} status to available", book.getTitle());
 		book.setStatus(Status.available);
 	    } else {
-		log.info("adding new book {}", book);
 		book = new Book();
 		book.setTitle(title);
 		book.setCategory(category);
 		book.setCoverimage(new URL(coverImage));
 		bookRepository.saveBook(book);
+		log.info("added new book {}", book);
 	    }
 	} catch (Exception e) {
 	    log.info("Exception " + e.getClass() + ":" +  e.getMessage());

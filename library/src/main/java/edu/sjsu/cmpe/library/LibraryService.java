@@ -83,6 +83,6 @@ public class LibraryService extends Service<LibraryServiceConfiguration> {
 	TopicConnection tConnection = factory.createTopicConnection();
 	tConnection.start();
 	tSession = tConnection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
-	tSession.setMessageListener(bookResource);
+	tSession.createSubscriber(tSession.createTopic("*")).setMessageListener(bookResource);
     }
 }

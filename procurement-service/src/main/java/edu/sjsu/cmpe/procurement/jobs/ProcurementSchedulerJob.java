@@ -26,7 +26,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 /**
  * This job will run every 5 minutes.
  */
-@Every("5s")
+@Every("30s")
 public class ProcurementSchedulerJob extends Job {
     private final Logger log = LoggerFactory.getLogger(getClass());
 
