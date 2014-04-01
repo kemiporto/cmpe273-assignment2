@@ -29,6 +29,7 @@ import edu.sjsu.cmpe.library.dto.BookDto;
 import edu.sjsu.cmpe.library.dto.BooksDto;
 import edu.sjsu.cmpe.library.dto.LinkDto;
 import edu.sjsu.cmpe.library.repository.BookRepositoryInterface;
+import edu.sjsu.cmpe.library.repository.BookRepository;
 import edu.sjsu.cmpe.library.LibraryService;
 
 import org.fusesource.stomp.codec.StompFrame;
@@ -146,7 +147,8 @@ public class BookResource implements MessageListener{
 	    String coverImage = split[3];
 	    log.info("received book from publisher: isbn: {}, title: {}, category: {}, coverimage: {}",
 		     isbn, title, category, coverImage);
-	    Book book = bookRepository.getBookByISBN((long) Integer.parseInt(isbn));
+	    Long lIsbn = (long) Integer.parseInt(isbn);
+	    Book book = bookRepository.getBookByISBN(lIsbn);
 	    
 	    if(book != null) {
 		log.info("changing book {} status to available", book.getTitle());
@@ -156,7 +158,8 @@ public class BookResource implements MessageListener{
 		book.setTitle(title);
 		book.setCategory(category);
 		book.setCoverimage(new URL(coverImage));
-		bookRepository.saveBook(book);
+		book.setIsbn(lIsbn);
+		((BookRepository) bookRepository).saveBookWithIsbn(book);
 		log.info("added new book {}", book);
 	    }
 	} catch (Exception e) {
