@@ -15,9 +15,9 @@ libraryName: library-a
 apolloUser: "admin"
 apolloPassword: "password"
 #Y
-#apolloHost: "54.219.156.168"
+apolloHost: "54.193.56.218"
 #X
-apolloHost: "54.215.133.131"
+#apolloHost: "54.215.133.131"
 apolloPort: 61613
 
 # HTTP-specific options.

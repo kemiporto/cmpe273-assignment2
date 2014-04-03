@@ -16,23 +16,25 @@ import edu.sjsu.cmpe.library.repository.BookRepository;
 import edu.sjsu.cmpe.library.repository.BookRepositoryInterface;
 import edu.sjsu.cmpe.library.ui.resources.HomeResource;
 
-import org.fusesource.stomp.client.BlockingConnection;
 import org.fusesource.stomp.client.Stomp;
 import org.fusesource.stomp.jms.StompJmsConnectionFactory;
+import org.fusesource.stomp.jms.StompJmsConnection;
+import org.fusesource.stomp.jms.StompJmsQueue;
 
 import javax.jms.TopicSession;
 import javax.jms.Session;
 import javax.jms.TopicConnection;
+import javax.jms.QueueSession;
 
 public class LibraryService extends Service<LibraryServiceConfiguration> {
 
     private final Logger log = LoggerFactory.getLogger(getClass());
 
-    public static BlockingConnection connection;
-
     private static String libraryName;
 
     public static TopicSession tSession;
+
+    public static javax.jms.MessageProducer producer;
 
     public static void main(String[] args) throws Exception {
 	new LibraryService().run(args);
@@ -53,6 +55,7 @@ public class LibraryService extends Service<LibraryServiceConfiguration> {
     public void run(LibraryServiceConfiguration configuration,
 	    Environment environment) throws Exception {
 	libraryName = configuration.getLibraryName();
+
 	// This is how you pull the configurations from library_x_config.yml
 	String queueName = configuration.getStompQueueName();
 	String topicName = configuration.getStompTopicName();
@@ -60,10 +63,17 @@ public class LibraryService extends Service<LibraryServiceConfiguration> {
 		configuration.getLibraryName(), queueName,
 		topicName);
 	// TODO: Apollo STOMP Broker URL and login
-	Stomp stomp = new Stomp(configuration.getApolloHost(), configuration.getApolloPort());
-	stomp.setPasscode(configuration.getApolloPassword());
-	stomp.setLogin(configuration.getApolloUser());
-	connection = stomp.connectBlocking();
+	StompJmsConnectionFactory factory = new StompJmsConnectionFactory();
+	factory.setBrokerURI("tcp://" + configuration.getApolloHost() + ":" + configuration.getApolloPort());
+	factory.setUsername(configuration.getApolloUser());
+	factory.setPassword(configuration.getApolloPassword());
+	factory.setQueuePrefix("/queue/26642.book.");
+	factory.setTopicPrefix("/topic/26642.books.");
+
+	StompJmsConnection connection = (StompJmsConnection) factory.createQueueConnection();
+	connection.start();
+	QueueSession session = connection.createQueueSession(false, javax.jms.Session.AUTO_ACKNOWLEDGE);
+	producer = session.createProducer(new StompJmsQueue(connection, "orders"));
 
 	/** Root API */
 	environment.addResource(RootResource.class);
@@ -75,11 +85,6 @@ public class LibraryService extends Service<LibraryServiceConfiguration> {
 	/** UI Resources */
 	environment.addResource(new HomeResource(bookRepository));
 
-	StompJmsConnectionFactory factory =  new StompJmsConnectionFactory();
-	factory.setBrokerURI("tcp://" + configuration.getApolloHost() + ":" + configuration.getApolloPort());
-	factory.setUsername(configuration.getApolloUser());
-	factory.setPassword(configuration.getApolloPassword());
-	factory.setTopicPrefix("/topic/26642.books.");
 	TopicConnection tConnection = factory.createTopicConnection();
 	tConnection.start();
 	tSession = tConnection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);

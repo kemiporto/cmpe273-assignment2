@@ -35,6 +35,7 @@ import edu.sjsu.cmpe.library.LibraryService;
 import org.fusesource.stomp.codec.StompFrame;
 import static org.fusesource.stomp.client.Constants.*;
 import static org.fusesource.hawtbuf.Buffer.ascii;
+import org.fusesource.stomp.jms.message.StompJmsTextMessage;
 import org.fusesource.hawtbuf.Buffer;
 import org.fusesource.hawtbuf.AsciiBuffer;
 
@@ -108,13 +109,12 @@ public class BookResource implements MessageListener{
 	Book book = bookRepository.getBookByISBN(isbn.get());
 	book.setStatus(status);
 	if(status == Status.lost) {
+	    StompJmsTextMessage stompMessage = new StompJmsTextMessage();
 	    try {
-		StompFrame frame = new StompFrame(SEND);
-		frame.addHeader(DESTINATION, StompFrame.encodeHeader("/queue/26642.book.orders"));
-		frame.content(Buffer.ascii(LibraryService.getLibraryName() + ":" + isbn));
-		LibraryService.connection.send(frame);
+		stompMessage.setText(LibraryService.getLibraryName() + ":" + isbn);
+		LibraryService.producer.send(stompMessage);
 	    }
-	    catch (IOException e) {
+	    catch (Exception e) {
 		return Response.status(500).build();
 	    }
 	}
