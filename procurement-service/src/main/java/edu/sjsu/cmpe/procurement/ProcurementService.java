@@ -79,15 +79,12 @@ public class ProcurementService extends Service<ProcurementServiceConfiguration>
 	factory.setQueuePrefix("/queue/26642.book.");
 	factory.setTopicPrefix("/topic/26642.books.");
 
-	StompJmsConnection connection = (StompJmsConnection) factory.createQueueConnection();
+	StompJmsConnection connection = (StompJmsConnection) factory.createConnection();
 	connection.start();
 	QueueSession session = connection.createQueueSession(false, javax.jms.Session.AUTO_ACKNOWLEDGE);
 	consumer = session.createConsumer(new StompJmsQueue(connection, "orders"));
 
-
-	TopicConnection tConnection = ProcurementService.factory.createTopicConnection();
-	tConnection.start();
-	tSession = tConnection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
+	tSession = connection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
     }
 
 }

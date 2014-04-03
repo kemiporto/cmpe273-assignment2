@@ -70,7 +70,7 @@ public class LibraryService extends Service<LibraryServiceConfiguration> {
 	factory.setQueuePrefix("/queue/26642.book.");
 	factory.setTopicPrefix("/topic/26642.books.");
 
-	StompJmsConnection connection = (StompJmsConnection) factory.createQueueConnection();
+	StompJmsConnection connection = (StompJmsConnection) factory.createConnection();
 	connection.start();
 	QueueSession session = connection.createQueueSession(false, javax.jms.Session.AUTO_ACKNOWLEDGE);
 	producer = session.createProducer(new StompJmsQueue(connection, "orders"));
@@ -85,9 +85,7 @@ public class LibraryService extends Service<LibraryServiceConfiguration> {
 	/** UI Resources */
 	environment.addResource(new HomeResource(bookRepository));
 
-	TopicConnection tConnection = factory.createTopicConnection();
-	tConnection.start();
-	tSession = tConnection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
+	tSession = connection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
 
 	tSession.createSubscriber(
 				  tSession.createTopic(configuration.getStompTopicName().

@@ -148,7 +148,7 @@ public class ProcurementSchedulerJob extends Job {
 	    ShippedBooks response = null;
 	    try {
 		response = ProcurementService.jerseyClient
-		    .resource("http://54.219.156.168:9000/orders/26642")
+		    .resource("http://54.193.56.218:9000/orders/26642")
 		    .get(ShippedBooks.class);
 		log.info("response from publisher: {}", response);
 
