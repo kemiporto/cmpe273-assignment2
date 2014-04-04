@@ -34,6 +34,7 @@ public class ProcurementService extends Service<ProcurementServiceConfiguration>
     public static javax.jms.MessageConsumer consumer;
     public static StompJmsConnectionFactory factory = null;
     public static TopicSession tSession;
+    public static ProcurementServiceConfiguration configuration;
 
     public static void main(String[] args) throws Exception {
 	new ProcurementService().run(args);
@@ -52,6 +53,8 @@ public class ProcurementService extends Service<ProcurementServiceConfiguration>
     @Override
     public void run(ProcurementServiceConfiguration configuration,
 	    Environment environment) throws Exception {
+	this.configuration = configuration;
+
 	log.info("host: " + configuration.getApolloHost());
 	log.info("port: " + configuration.getApolloPort());
 	jerseyClient = new JerseyClientBuilder()
@@ -68,21 +71,21 @@ public class ProcurementService extends Service<ProcurementServiceConfiguration>
 	 */
 	environment.addResource(RootResource.class);
 
-	String queueName = configuration.getStompQueueName();
-	String topicName = configuration.getStompTopicPrefix();
-	log.debug("Queue name is {}. Topic is {}", queueName, topicName);
-
 	factory = new StompJmsConnectionFactory();
 	factory.setBrokerURI("tcp://" + configuration.getApolloHost() + ":" + configuration.getApolloPort());
 	factory.setUsername(configuration.getApolloUser());
 	factory.setPassword(configuration.getApolloPassword());
-	factory.setQueuePrefix("/queue/26642.book.");
-	factory.setTopicPrefix("/topic/26642.books.");
+	factory.setQueuePrefix(configuration.getStompQueuePrefix());
+	factory.setTopicPrefix(configuration.getStompTopicPrefix());
 
 	StompJmsConnection connection = (StompJmsConnection) factory.createConnection();
 	connection.start();
 	QueueSession session = connection.createQueueSession(false, javax.jms.Session.AUTO_ACKNOWLEDGE);
-	consumer = session.createConsumer(new StompJmsQueue(connection, "orders"));
+
+	consumer = session.createConsumer
+	    (new StompJmsQueue(connection, 
+			       configuration.getStompQueueName()
+			       .replaceFirst(configuration.getStompQueuePrefix(), "")));
 
 	tSession = connection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
     }

@@ -3,11 +3,14 @@
 ##############################
 
 # Apollo STOMP Broker Configuration
-stompQueueName: /queue/26642.books.orders
+stompQueueName: /queue/26642.book.orders
+stompQueuePrefix: /queue/26642.book.
+
+stompTopicPrefix: /topic/26642.book.
 
 # Library A subscribes to all book categories
 # If book.* doesn't work, try book.all
-stompTopicName: /topic/26642.books.*
+stompTopicName: /topic/26642.book.*
 
 # Name for library A
 libraryName: library-a

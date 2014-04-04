@@ -3,10 +3,12 @@
 ##############################
 
 # Apollo STOMP Broker Configuration
-stompQueueName: /queue/26642.books.orders
+stompQueueName: /queue/26642.book.orders
+stompQueuePrefix: /queue/26642.book.
 
 # Library B subscribes to the Computer category ONLY!
-stompTopicName: /topic/26642.books.computer
+stompTopicName: /topic/26642.book.computer
+stompTopicPrefix: /topic/26642.book.
 
 # Name for library B
 libraryName: library-b

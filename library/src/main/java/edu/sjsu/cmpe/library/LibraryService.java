@@ -36,6 +36,8 @@ public class LibraryService extends Service<LibraryServiceConfiguration> {
 
     public static javax.jms.MessageProducer producer;
 
+    public static LibraryServiceConfiguration configuration;
+
     public static void main(String[] args) throws Exception {
 	new LibraryService().run(args);
     }
@@ -54,6 +56,8 @@ public class LibraryService extends Service<LibraryServiceConfiguration> {
     @Override
     public void run(LibraryServiceConfiguration configuration,
 	    Environment environment) throws Exception {
+
+	this.configuration = configuration;
 	libraryName = configuration.getLibraryName();
 
 	// This is how you pull the configurations from library_x_config.yml
@@ -67,13 +71,15 @@ public class LibraryService extends Service<LibraryServiceConfiguration> {
 	factory.setBrokerURI("tcp://" + configuration.getApolloHost() + ":" + configuration.getApolloPort());
 	factory.setUsername(configuration.getApolloUser());
 	factory.setPassword(configuration.getApolloPassword());
-	factory.setQueuePrefix("/queue/26642.book.");
-	factory.setTopicPrefix("/topic/26642.books.");
+	factory.setQueuePrefix(configuration.getStompQueuePrefix());
+	factory.setTopicPrefix(configuration.getStompTopicPrefix());
 
 	StompJmsConnection connection = (StompJmsConnection) factory.createConnection();
 	connection.start();
 	QueueSession session = connection.createQueueSession(false, javax.jms.Session.AUTO_ACKNOWLEDGE);
-	producer = session.createProducer(new StompJmsQueue(connection, "orders"));
+	producer = session.createProducer
+	    (new StompJmsQueue(connection, configuration.getStompQueueName()
+			       .replaceFirst(configuration.getStompQueuePrefix(), "")));
 
 	/** Root API */
 	environment.addResource(RootResource.class);

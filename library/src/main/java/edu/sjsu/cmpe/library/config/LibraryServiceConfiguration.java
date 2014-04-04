@@ -12,7 +12,14 @@ public class LibraryServiceConfiguration extends Configuration {
 
     @NotEmpty
     @JsonProperty
+    private String stompQueuePrefix;
+
+   @NotEmpty
+    @JsonProperty
     private String stompTopicName;
+
+    @JsonProperty
+    private String stompTopicPrefix;
 
     @NotEmpty
     @JsonProperty
@@ -45,10 +52,21 @@ public class LibraryServiceConfiguration extends Configuration {
 	this.stompQueueName = stompQueueName;
     }
 
+    public String  getStompQueuePrefix() {
+	return stompQueuePrefix;
+    }
+
+    public void setStompQueuePrefix(String prefix) {
+	stompQueuePrefix = prefix;
+    }
+
     /**
      * @return the stompTopicName
      */
     public String getStompTopicName() {
+	if(stompTopicName == null || stompTopicName.isEmpty()) {
+	    return stompTopicPrefix + "*";
+	}
 	return stompTopicName;
     }
 
@@ -65,6 +83,14 @@ public class LibraryServiceConfiguration extends Configuration {
      */
     public String getLibraryName() {
 	return libraryName;
+    }
+
+    public String getStompTopicPrefix() {
+	return stompTopicPrefix;
+    }
+
+    public void setStompTopicPrefix(String stompTopicPrefix) {
+	this.stompTopicPrefix = stompTopicPrefix;
     }
 
     /**

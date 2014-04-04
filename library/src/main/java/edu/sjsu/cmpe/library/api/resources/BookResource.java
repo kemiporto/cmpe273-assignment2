@@ -106,8 +106,6 @@ public class BookResource implements MessageListener{
     @Timed(name = "update-book-status")
     public Response updateBookStatus(@PathParam("isbn") LongParam isbn,
 	    @DefaultValue("available") @QueryParam("status") Status status) {
-	Book book = bookRepository.getBookByISBN(isbn.get());
-	book.setStatus(status);
 	if(status == Status.lost) {
 	    StompJmsTextMessage stompMessage = new StompJmsTextMessage();
 	    try {
@@ -118,6 +116,9 @@ public class BookResource implements MessageListener{
 		return Response.status(500).build();
 	    }
 	}
+	Book book = bookRepository.getBookByISBN(isbn.get());
+	book.setStatus(status);
+
 	BookDto bookResponse = new BookDto(book);
 	String location = "/books/" + book.getIsbn();
 	bookResponse.addLink(new LinkDto("view-book", location, "GET"));
@@ -150,10 +151,10 @@ public class BookResource implements MessageListener{
 	    Long lIsbn = (long) Integer.parseInt(isbn);
 	    Book book = bookRepository.getBookByISBN(lIsbn);
 	    
-	    if(book != null) {
+	    if(book != null && book.getStatus() == Status.lost) {
 		log.info("changing book {} status to available", book.getTitle());
 		book.setStatus(Status.available);
-	    } else {
+	    } else  if (book == null){
 		book = new Book();
 		book.setTitle(title);
 		book.setCategory(category);

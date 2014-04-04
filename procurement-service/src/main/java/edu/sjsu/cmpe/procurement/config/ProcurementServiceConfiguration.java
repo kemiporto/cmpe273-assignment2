@@ -14,6 +14,10 @@ public class ProcurementServiceConfiguration extends Configuration {
     @JsonProperty
     private String stompQueueName;
 
+   @NotEmpty
+    @JsonProperty
+    private String stompQueuePrefix;
+
     @NotEmpty
     @JsonProperty
     private String stompTopicPrefix;
@@ -30,6 +34,14 @@ public class ProcurementServiceConfiguration extends Configuration {
     @JsonProperty
     public String apolloPwd;
     
+    @JsonProperty
+    @NotEmpty
+    private String procurementId;
+
+    @JsonProperty
+    @NotEmpty
+    private String publisherResource;
+
     @Valid
     @NotNull
     @JsonProperty
@@ -49,13 +61,21 @@ public class ProcurementServiceConfiguration extends Configuration {
     public String getStompQueueName() {
 	return stompQueueName;
     }
-
+    
     /**
      * @param stompQueueName
      *            the stompQueueName to set
      */
     public void setStompQueueName(String stompQueueName) {
 	this.stompQueueName = stompQueueName;
+    }
+
+    public String  getStompQueuePrefix() {
+	return stompQueuePrefix;
+    }
+
+    public void setStompQueuePrefix(String prefix) {
+	stompQueuePrefix = prefix;
     }
 
     public String getStompTopicPrefix() {
@@ -98,4 +118,19 @@ public class ProcurementServiceConfiguration extends Configuration {
 	apolloPwd = pwd;
     }
 
+    public String getProcurementId() {
+	return procurementId;
+    }
+
+    public void setprocurementId(String id) {
+	procurementId = id;
+    }
+
+    public String getPublisherResource() {
+	return publisherResource;
+    }
+
+    public void setPublicReesourde(String resource) {
+	publisherResource = resource;
+    }
 }

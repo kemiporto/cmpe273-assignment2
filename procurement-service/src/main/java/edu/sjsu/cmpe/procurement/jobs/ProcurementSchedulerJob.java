@@ -26,17 +26,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 /**
  * This job will run every 5 minutes.
  */
-@Every("5min")
+@Every("5s")
 public class ProcurementSchedulerJob extends Job {
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     static class BookOrderRequest {
 	private static final ObjectMapper mapper = new ObjectMapper();
 
-	private String id = "26642";
-
 	public String getId() {
-	    return id;
+	    return ProcurementService.configuration.getProcurementId();
 	}
 
 	@JsonProperty("order_book_isbns")
@@ -97,7 +95,7 @@ public class ProcurementSchedulerJob extends Job {
     private void postOrderBook(ArrayList<Integer> order) throws Exception {
 	log.info("sending POST request to publisher");
 	BookOrderResponse response = ProcurementService.jerseyClient
-	    .resource("http://54.219.156.168:9000/orders")
+	    .resource("http://54.193.56.218:9000/orders")
 	    .entity(new BookOrderRequest(order).toJsonByteArray(), "application/json")
 	    .post(BookOrderResponse.class);
 	log.info("Response from broker: {}", response);
@@ -148,7 +146,7 @@ public class ProcurementSchedulerJob extends Job {
 	    ShippedBooks response = null;
 	    try {
 		response = ProcurementService.jerseyClient
-		    .resource("http://54.193.56.218:9000/orders/26642")
+		    .resource(ProcurementService.configuration.getPublisherResource())
 		    .get(ShippedBooks.class);
 		log.info("response from publisher: {}", response);
 
